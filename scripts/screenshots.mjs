@@ -29,8 +29,10 @@ await shot('01-deal-top')
 await page.locator('[data-testid="results"]').scrollIntoViewIfNeeded()
 await shot('02-results')
 
-// sensitivity section
+// sensitivity section — scroll so slider is visible under sticky dash
 await page.locator('text=Sensitivity').scrollIntoViewIfNeeded()
+await page.waitForTimeout(200)
+await page.evaluate(() => window.scrollBy(0, 80))
 await shot('03-sensitivity')
 
 // LTV/LTC toggle
