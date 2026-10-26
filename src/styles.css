@@ -86,21 +86,34 @@ button { cursor: pointer; }
   background: #ecfeff; color: var(--teal2); border-radius: 999px; padding: 3px 8px;
 }
 
-.grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-.grid.one { grid-template-columns: 1fr; }
-.grid.three { grid-template-columns: 1fr 1fr 1fr; }
+.grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; width: 100%; }
+.grid.one { grid-template-columns: minmax(0, 1fr); }
+.grid.three { grid-template-columns: repeat(3, minmax(0, 1fr)); }
 
-label.field { display: flex; flex-direction: column; gap: 5px; font-size: 12.5px; font-weight: 650; color: var(--mute); }
+label.field { display: flex; flex-direction: column; gap: 5px; font-size: 12.5px; font-weight: 650; color: var(--mute); min-width: 0; max-width: 100%; }
 label.field span.full { grid-column: 1 / -1; }
-.field input, .field select {
-  font-size: 16px; min-height: 48px; padding: 10px 12px;
+.field .fin {
+  display: flex; align-items: center; gap: 2px; min-width: 0; width: 100%;
+  font-size: 16px; min-height: 48px; padding: 0 12px;
   border-radius: 12px; border: 1px solid var(--line); background: #fff; color: var(--ink);
-  width: 100%; -webkit-appearance: none; appearance: none;
+  overflow: hidden;
 }
-.field input:focus, .field select:focus { outline: 2px solid rgba(13,148,136,.35); border-color: var(--teal); }
-.field.locked input {
-  background: #f8fafc; color: var(--navy); font-weight: 700; border-style: dashed;
+.field .fin:focus-within { outline: 2px solid rgba(13,148,136,.35); border-color: var(--teal); }
+.field .fin input, .field select {
+  flex: 1 1 0; border: 0; background: transparent; padding: 10px 0; min-height: 46px;
+  min-width: 0; width: 100%; outline: none; font-size: 16px; color: var(--ink);
+  font-variant-numeric: tabular-nums; font-weight: 700;
+  -webkit-appearance: none; appearance: none;
 }
+.field select {
+  border: 1px solid var(--line); border-radius: 12px; background: #fff;
+  padding: 10px 12px; min-height: 48px; font-weight: 600;
+}
+.field .affix { color: var(--mute); font-weight: 700; flex: none; font-size: 13px; }
+.field.locked .fin {
+  background: #f8fafc; border-style: dashed;
+}
+.field.locked .fin input { color: var(--navy); font-weight: 700; }
 .out-row {
   display: flex; justify-content: space-between; align-items: baseline;
   padding: 9px 0; border-top: 1px solid var(--line); font-size: 15px;

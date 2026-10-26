@@ -1,42 +1,31 @@
-# Deal Pro Forma v1.2 — Report (Terms glossary tab)
+# Deal Pro Forma — Report (money input formatting)
 
-**Status:** Terms tab added + tested + screenshots. **NOT published.** Awaiting Chairman Publish widget.
+**Status:** Implemented + tested + screenshots. **NOT published.** Awaiting Chairman Publish widget.
 
 **Path:** `/workspace/deal-proforma`  
 **Live (confirm only — this change not pushed):** https://bludiamond888-rgb.github.io/deal-proforma/
 
-## Terms tab (Definitions / glossary)
+## Fix: money / large number inputs (same bug as Deal Flow)
 
-Matches sibling **Deal Flow** naming/UX:
-
-| | |
+| Behavior | Detail |
 |---|---|
-| Tab id | `glossary` |
-| Tab label | **Terms** (☰) |
-| Bottom nav | Deal · Saved · Terms · About (More renamed About) |
-| Data | `src/glossary.ts` — same `GlossaryEntry` / `GLOSSARY_GROUPS` shape as Deal Flow |
-| Groups | Key inputs · Metrics · Income & cash flow |
-| Style | `.glossary` / `.g-item` / `.tip` cards (plain English + optional tip callouts) |
+| No leading zeros | While typing / editing |
+| Commas on blur | Purchase price `$25,000,000`, rents, opex, taxes, NOI, capex amounts, rentable SF |
+| Edit UX | Strip commas on focus; reformat on blur; parse for calc |
+| Percentages | Plain (e.g. `5.75`) — no forced grouping |
+| Layout | Grid uses `minmax(0,1fr)` so long formatted values don’t clip on iPhone Home Screen |
 
-Covers every key form input and return metric (Tactica BOE style): LTV/LTC, vacancy, EGI, NOI, DSCR, CoC, YoC, debt yield, hold IRR, equity multiple, tax reassessment, etc.
+Helpers: `src/numInput.ts`. Capex amount column uses shared `AmountInput`.
 
 ## Screenshots (WebKit 440×956 @3)
 
-- `/workspace/deal-proforma/screens/01-deal-top.png` — 4-tab bar visible
-- `/workspace/deal-proforma/screens/02-results.png`
-- `/workspace/deal-proforma/screens/03-hold-irr.png`
-- `/workspace/deal-proforma/screens/04-sensitivity.png`
-- `/workspace/deal-proforma/screens/05-capital-ltc.png`
-- `/workspace/deal-proforma/screens/06-saved-empty.png`
-- `/workspace/deal-proforma/screens/07-saved-list.png`
-- `/workspace/deal-proforma/screens/08-terms-top.png` — Terms / Key inputs
-- `/workspace/deal-proforma/screens/09-terms-metrics.png` — scrolled glossary
-- `/workspace/deal-proforma/screens/10-about.png` — About points to Terms
+- `screens/05a-price-formatted.png` — purchase price after leading-zero type + blur → `$2,000`
+- plus existing deal / results / hold / sensitivity / capital / saved / terms / about
 
 ## Tests
 
-`npm test` — **16/16** passed.
+`npm test` — **17/17** passed.
 
 ## Git
 
-Local commit only — **no push / no publish.**
+Local commit only. **Do not push / do not publish** until Chairman Publish widget.

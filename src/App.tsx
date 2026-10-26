@@ -12,6 +12,13 @@ import {
 } from './storage'
 import type { CapexItem, DealInputs, FinancingBasis } from './types'
 import { GLOSSARY, GLOSSARY_GROUPS } from './glossary'
+import {
+  sanitizeDraft,
+  parseDraft,
+  toEditDraft,
+  formatGrouped,
+  type NumFormat,
+} from './numInput'
 
 type Tab = 'deal' | 'saved' | 'glossary' | 'about'
 
@@ -19,44 +26,122 @@ function Field({
   label,
   value,
   onChange,
-  step,
   locked,
   prefix,
   suffix,
   type = 'number',
+  format = 'number',
 }: {
   label: string
   value: string | number
   onChange?: (v: number | string) => void
-  step?: string
   locked?: boolean
   prefix?: string
   suffix?: string
   type?: 'number' | 'text'
+  format?: NumFormat
 }) {
+  const [editing, setEditing] = useState(false)
+  const [draft, setDraft] = useState('')
+
+  if (type === 'text') {
+    return (
+      <label className={`field${locked ? ' locked' : ''}`}>
+        {label}
+        <span className="fin">
+          {prefix ? <span className="affix">{prefix}</span> : null}
+          <input
+            type="text"
+            value={String(value ?? '')}
+            readOnly={locked}
+            onChange={(e) => {
+              if (locked || !onChange) return
+              onChange(e.target.value)
+            }}
+          />
+          {suffix ? <span className="affix">{suffix}</span> : null}
+        </span>
+      </label>
+    )
+  }
+
+  const numVal = typeof value === 'number' ? value : Number(value)
+  const safe = Number.isFinite(numVal) ? numVal : 0
+  const shown = editing ? draft : formatGrouped(safe, format)
+
   return (
     <label className={`field${locked ? ' locked' : ''}`}>
       {label}
-      <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-        {prefix ? <span style={{ color: 'var(--mute)', fontWeight: 700 }}>{prefix}</span> : null}
+      <span className="fin">
+        {prefix ? <span className="affix">{prefix}</span> : null}
         <input
-          type={type}
-          inputMode={type === 'number' ? 'decimal' : undefined}
-          step={step ?? (type === 'number' ? 'any' : undefined)}
-          value={value}
+          type="text"
+          inputMode="decimal"
+          autoComplete="off"
+          enterKeyHint="done"
+          value={shown}
           readOnly={locked}
+          onFocus={(e) => {
+            if (locked) return
+            setEditing(true)
+            setDraft(toEditDraft(safe, true))
+            requestAnimationFrame(() => e.target.select())
+          }}
+          onBlur={() => {
+            if (locked) return
+            setEditing(false)
+            const n = parseDraft(draft)
+            onChange?.(n)
+            setDraft('')
+          }}
           onChange={(e) => {
             if (locked || !onChange) return
-            if (type === 'text') onChange(e.target.value)
-            else {
-              const n = e.target.value === '' ? 0 : Number(e.target.value)
-              if (!Number.isNaN(n)) onChange(n)
-            }
+            const next = sanitizeDraft(e.target.value, true)
+            setDraft(next)
+            onChange(parseDraft(next))
           }}
         />
-        {suffix ? <span style={{ color: 'var(--mute)', fontWeight: 700 }}>{suffix}</span> : null}
+        {suffix ? <span className="affix">{suffix}</span> : null}
       </span>
     </label>
+  )
+}
+
+function AmountInput({
+  value,
+  onChange,
+}: {
+  value: number
+  onChange: (n: number) => void
+}) {
+  const [editing, setEditing] = useState(false)
+  const [draft, setDraft] = useState('')
+  const safe = Number.isFinite(value) ? value : 0
+  const shown = editing ? draft : formatGrouped(safe, 'money')
+  return (
+    <input
+      type="text"
+      inputMode="decimal"
+      autoComplete="off"
+      enterKeyHint="done"
+      aria-label="Amount"
+      value={shown}
+      onFocus={(e) => {
+        setEditing(true)
+        setDraft(toEditDraft(safe, true))
+        requestAnimationFrame(() => e.target.select())
+      }}
+      onBlur={() => {
+        setEditing(false)
+        onChange(parseDraft(draft))
+        setDraft('')
+      }}
+      onChange={(e) => {
+        const next = sanitizeDraft(e.target.value, true)
+        setDraft(next)
+        onChange(parseDraft(next))
+      }}
+    />
   )
 }
 
@@ -180,8 +265,8 @@ export default function App() {
                 <Field label="ZIP" type="text" value={deal.zip} onChange={(v) => patch('zip', String(v))} />
               </div>
               <div className="grid" style={{ marginTop: 10 }}>
-                <Field label="Units" value={deal.units} onChange={(v) => patch('units', Number(v))} />
-                <Field label="Rentable SF" value={deal.rentableSf} onChange={(v) => patch('rentableSf', Number(v))} />
+                <Field label="Units" format="number" value={deal.units} onChange={(v) => patch('units', Number(v))} />
+                <Field label="Rentable SF" format="number" value={deal.rentableSf} onChange={(v) => patch('rentableSf', Number(v))} />
               </div>
               <div className="out-row"><span className="lab">Price / unit</span><span className="val">{money(r.pricePerUnit)}</span></div>
               <div className="out-row"><span className="lab">Price / SF</span><span className="val">{money(r.pricePerSf, 2)}</span></div>
@@ -190,7 +275,7 @@ export default function App() {
             <section className="card">
               <h2>Capital stack</h2>
               <div className="grid one">
-                <Field label="Purchase price" value={deal.purchasePrice} onChange={(v) => patch('purchasePrice', Number(v))} />
+                <Field label="Purchase price" format="money" prefix="$" value={deal.purchasePrice} onChange={(v) => patch('purchasePrice', Number(v))} />
               </div>
               <div style={{ margin: '12px 0 8px' }}>
                 <div className="seg" role="group" aria-label="Financing basis">
@@ -208,23 +293,20 @@ export default function App() {
               </div>
               <div className="grid">
                 <Field
-                  label={`${deal.financingBasis} %`}
+                  label={`${deal.financingBasis} %`} format="percent"
                   value={pctInput(deal.ltvLtcPct)}
                   onChange={(v) => patch('ltvLtcPct', fromPctInput(Number(v)))}
-                  step="0.1"
                 />
                 <Field
-                  label="Interest rate %"
+                  label="Interest rate %" format="percent"
                   value={pctInput(deal.interestRate)}
                   onChange={(v) => patch('interestRate', fromPctInput(Number(v)))}
-                  step="0.01"
                 />
-                <Field label="Amort years" value={deal.amortYears} onChange={(v) => patch('amortYears', Number(v))} />
+                <Field label="Amort years" format="number" value={deal.amortYears} onChange={(v) => patch('amortYears', Number(v))} />
                 <Field
-                  label="Loan cost %"
+                  label="Loan cost %" format="percent"
                   value={pctInput(deal.loanCostPct)}
                   onChange={(v) => patch('loanCostPct', fromPctInput(Number(v)))}
-                  step="0.01"
                 />
               </div>
               <div className="out-row"><span className="lab">Loan amount</span><span className="val">{money(r.loanAmount)}</span></div>
@@ -251,13 +333,11 @@ export default function App() {
                         setCapex(next)
                       }}
                     />
-                    <input
-                      type="number"
-                      inputMode="decimal"
+                    <AmountInput
                       value={c.amount}
-                      onChange={(e) => {
+                      onChange={(n) => {
                         const next = [...deal.capex]
-                        next[i] = { ...c, amount: Number(e.target.value) || 0 }
+                        next[i] = { ...c, amount: n }
                         setCapex(next)
                       }}
                     />
@@ -290,15 +370,14 @@ export default function App() {
             <section className="card">
               <h2>Revenue</h2>
               <div className="grid">
-                <Field label="Avg rent / unit / mo" value={deal.avgRentMonthly} onChange={(v) => patch('avgRentMonthly', Number(v))} />
-                <Field label="Rent premium / mo" value={deal.rentPremiumMonthly} onChange={(v) => patch('rentPremiumMonthly', Number(v))} />
-                <Field label="Parking / unit / mo" value={deal.parkingMonthlyPerUnit} onChange={(v) => patch('parkingMonthlyPerUnit', Number(v))} />
-                <Field label="Other income / unit / yr" value={deal.otherIncomeAnnualPerUnit} onChange={(v) => patch('otherIncomeAnnualPerUnit', Number(v))} />
+                <Field label="Avg rent / unit / mo" format="money" prefix="$" value={deal.avgRentMonthly} onChange={(v) => patch('avgRentMonthly', Number(v))} />
+                <Field label="Rent premium / mo" format="money" value={deal.rentPremiumMonthly} onChange={(v) => patch('rentPremiumMonthly', Number(v))} />
+                <Field label="Parking / unit / mo" format="money" value={deal.parkingMonthlyPerUnit} onChange={(v) => patch('parkingMonthlyPerUnit', Number(v))} />
+                <Field label="Other income / unit / yr" format="money" value={deal.otherIncomeAnnualPerUnit} onChange={(v) => patch('otherIncomeAnnualPerUnit', Number(v))} />
                 <Field
-                  label="Vacancy %"
+                  label="Vacancy %" format="percent"
                   value={pctInput(deal.vacancyPct)}
                   onChange={(v) => patch('vacancyPct', fromPctInput(Number(v)))}
-                  step="0.1"
                 />
               </div>
               <div className="out-row"><span className="lab">Gross potential rent</span><span className="val">{money(r.grossPotentialRentAnnual)}</span></div>
@@ -311,19 +390,18 @@ export default function App() {
             <section className="card">
               <h2>Expenses ($ / unit / yr)</h2>
               <div className="grid">
-                <Field label="Admin" value={deal.adminPerUnitYr} onChange={(v) => patch('adminPerUnitYr', Number(v))} />
-                <Field label="Payroll" value={deal.payrollPerUnitYr} onChange={(v) => patch('payrollPerUnitYr', Number(v))} />
-                <Field label="Utilities" value={deal.utilitiesPerUnitYr} onChange={(v) => patch('utilitiesPerUnitYr', Number(v))} />
-                <Field label="Insurance" value={deal.insurancePerUnitYr} onChange={(v) => patch('insurancePerUnitYr', Number(v))} />
-                <Field label="R&M" value={deal.rmPerUnitYr} onChange={(v) => patch('rmPerUnitYr', Number(v))} />
-                <Field label="Marketing" value={deal.marketingPerUnitYr} onChange={(v) => patch('marketingPerUnitYr', Number(v))} />
-                <Field label="Other opex" value={deal.otherOpexPerUnitYr} onChange={(v) => patch('otherOpexPerUnitYr', Number(v))} />
-                <Field label="Reserves" value={deal.reservesPerUnitYr} onChange={(v) => patch('reservesPerUnitYr', Number(v))} />
+                <Field label="Admin" format="money" value={deal.adminPerUnitYr} onChange={(v) => patch('adminPerUnitYr', Number(v))} />
+                <Field label="Payroll" format="money" value={deal.payrollPerUnitYr} onChange={(v) => patch('payrollPerUnitYr', Number(v))} />
+                <Field label="Utilities" format="money" value={deal.utilitiesPerUnitYr} onChange={(v) => patch('utilitiesPerUnitYr', Number(v))} />
+                <Field label="Insurance" format="money" value={deal.insurancePerUnitYr} onChange={(v) => patch('insurancePerUnitYr', Number(v))} />
+                <Field label="R&M" format="money" value={deal.rmPerUnitYr} onChange={(v) => patch('rmPerUnitYr', Number(v))} />
+                <Field label="Marketing" format="money" value={deal.marketingPerUnitYr} onChange={(v) => patch('marketingPerUnitYr', Number(v))} />
+                <Field label="Other opex" format="money" value={deal.otherOpexPerUnitYr} onChange={(v) => patch('otherOpexPerUnitYr', Number(v))} />
+                <Field label="Reserves" format="money" value={deal.reservesPerUnitYr} onChange={(v) => patch('reservesPerUnitYr', Number(v))} />
                 <Field
-                  label="Mgmt fee % of EGI"
+                  label="Mgmt fee % of EGI" format="percent"
                   value={pctInput(deal.managementFeePctOfEgi)}
                   onChange={(v) => patch('managementFeePctOfEgi', fromPctInput(Number(v)))}
-                  step="0.1"
                 />
               </div>
               <div className="out-row"><span className="lab">Line-item opex</span><span className="val">{money(r.opexLineTotal)}</span></div>
@@ -336,13 +414,12 @@ export default function App() {
             <section className="card">
               <h2>Property tax reassess</h2>
               <div className="grid">
-                <Field label="Current assessment" value={deal.currentAssessment} onChange={(v) => patch('currentAssessment', Number(v))} />
-                <Field label="Taxes payable today" value={deal.taxesPayableToday} onChange={(v) => patch('taxesPayableToday', Number(v))} />
+                <Field label="Current assessment" format="money" prefix="$" value={deal.currentAssessment} onChange={(v) => patch('currentAssessment', Number(v))} />
+                <Field label="Taxes payable today" format="money" prefix="$" value={deal.taxesPayableToday} onChange={(v) => patch('taxesPayableToday', Number(v))} />
                 <Field
-                  label="Reassess % of price"
+                  label="Reassess % of price" format="percent"
                   value={pctInput(deal.reassessToPctOfPrice)}
                   onChange={(v) => patch('reassessToPctOfPrice', fromPctInput(Number(v)))}
-                  step="1"
                 />
               </div>
               <div className="out-row"><span className="lab">Implied tax rate</span><span className="val">{pct(r.taxRate, 3)}</span></div>
@@ -365,13 +442,12 @@ export default function App() {
               <div className="out-row"><span className="lab">Debt yield</span><span className="val">{pct(r.debtYield)}</span></div>
               <div className="grid" style={{ marginTop: 10 }}>
                 <Field
-                  label="Market cap rate %"
+                  label="Market cap rate %" format="percent"
                   value={pctInput(deal.marketCapRate)}
                   onChange={(v) => patch('marketCapRate', fromPctInput(Number(v)))}
-                  step="0.05"
                 />
                 <Field
-                  label="Historical NOI"
+                  label="Historical NOI" format="money" prefix="$"
                   value={deal.historicalNoi}
                   onChange={(v) => patch('historicalNoi', Number(v))}
                 />
@@ -387,18 +463,16 @@ export default function App() {
                 Simple BOE: annual BTCF held constant at Year-1 BTCF for each hold year (no rent growth / expense inflation).
               </p>
               <div className="grid">
-                <Field label="Hold years" value={deal.holdYears} onChange={(v) => patch('holdYears', Math.max(0, Math.floor(Number(v))))} />
+                <Field label="Hold years" format="number" value={deal.holdYears} onChange={(v) => patch('holdYears', Math.max(0, Math.floor(Number(v))))} />
                 <Field
-                  label="Residual cap %"
+                  label="Residual cap %" format="percent"
                   value={pctInput(deal.residualCapRate)}
                   onChange={(v) => patch('residualCapRate', fromPctInput(Number(v)))}
-                  step="0.05"
                 />
                 <Field
-                  label="Sale cost %"
+                  label="Sale cost %" format="percent"
                   value={pctInput(deal.saleCostPct)}
                   onChange={(v) => patch('saleCostPct', fromPctInput(Number(v)))}
-                  step="0.1"
                 />
               </div>
               <div className="out-row"><span className="lab">Gross sale (NOI ÷ residual)</span><span className="val">{money(r.grossSale)}</span></div>
