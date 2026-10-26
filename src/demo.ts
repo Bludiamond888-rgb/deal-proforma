@@ -39,6 +39,9 @@ export const DEMO_DEAL: DealInputs = {
   reassessToPctOfPrice: 1.0,
   historicalNoi: 1_300_000,
   marketCapRate: 0.0525,
+  holdYears: 5,
+  residualCapRate: 0.0525,
+  saleCostPct: 0.03,
 }
 
 export function blankDeal(): DealInputs {

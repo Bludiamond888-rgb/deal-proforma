@@ -149,8 +149,8 @@ export default function App() {
             <div className="v">{pct(r.cashOnCash)}</div>
           </div>
           <div>
-            <div className="k">Cap</div>
-            <div className="v">{pct(r.proFormaCap)}</div>
+            <div className="k">IRR</div>
+            <div className="v">{Number.isFinite(r.leveredIrr) ? pct(r.leveredIrr) : '—'}</div>
           </div>
         </div>
       )}
@@ -379,6 +379,36 @@ export default function App() {
               <div className="out-row"><span className="lab">Profit potential</span><span className="val">{money(r.profitPotential)}</span></div>
             </section>
 
+
+            <section className="card" data-testid="hold">
+              <h2>Hold period / IRR</h2>
+              <p style={{ margin: '0 0 12px', fontSize: 13, color: 'var(--mute)', lineHeight: 1.4 }}>
+                Simple BOE: annual BTCF held constant at Year-1 BTCF for each hold year (no rent growth / expense inflation).
+              </p>
+              <div className="grid">
+                <Field label="Hold years" value={deal.holdYears} onChange={(v) => patch('holdYears', Math.max(0, Math.floor(Number(v))))} />
+                <Field
+                  label="Residual cap %"
+                  value={pctInput(deal.residualCapRate)}
+                  onChange={(v) => patch('residualCapRate', fromPctInput(Number(v)))}
+                  step="0.05"
+                />
+                <Field
+                  label="Sale cost %"
+                  value={pctInput(deal.saleCostPct)}
+                  onChange={(v) => patch('saleCostPct', fromPctInput(Number(v)))}
+                  step="0.1"
+                />
+              </div>
+              <div className="out-row"><span className="lab">Gross sale (NOI ÷ residual)</span><span className="val">{money(r.grossSale)}</span></div>
+              <div className="out-row"><span className="lab">Sale costs</span><span className="val">{money(r.saleCosts)}</span></div>
+              <div className="out-row"><span className="lab">Net sale</span><span className="val">{money(r.netSale)}</span></div>
+              <div className="out-row"><span className="lab">Loan balance at exit</span><span className="val">{money(r.loanBalanceAtExit)}</span></div>
+              <div className="out-row emph"><span className="lab">Equity reversion</span><span className="val">{money(r.equityReversion)}</span></div>
+              <div className="out-row emph"><span className="lab">Levered IRR</span><span className="val">{Number.isFinite(r.leveredIrr) ? pct(r.leveredIrr) : '—'}</span></div>
+              <div className="out-row"><span className="lab">Equity multiple</span><span className="val">{Number.isFinite(r.equityMultiple) ? `${r.equityMultiple.toFixed(2)}x` : '—'}</span></div>
+            </section>
+
             <section className="card">
               <h2>Sensitivity</h2>
               <div className="slider-row">
@@ -534,6 +564,8 @@ export default function App() {
               Formulas: loan = LTV%×Price or LTC%×(Price+Capex); equity = Price − Loan + LoanCost + Capex;
               ADS = PMT×12; EGI = rents − vacancy + other; NOI = EGI − expenses (incl. mgmt%×EGI + future tax + reserves);
               CoC = BTCF / equity; Cap = NOI / Price; YoC = NOI / cost basis; Exit = NOI / market cap.
+              Hold IRR: constant Year-1 BTCF each year; gross sale = NOI / residual cap; equity reversion = net sale − loan balance;
+              levered IRR on [−equity, …BTCF…, BTCF+reversion]; equity multiple = (Σ BTCF + reversion) / equity.
             </p>
             <button
               type="button"

@@ -40,6 +40,12 @@ export type DealInputs = {
   reassessToPctOfPrice: number
   historicalNoi: number
   marketCapRate: number
+  /** Hold period for simple BOE IRR (years). */
+  holdYears: number
+  /** Exit cap; defaults to market cap in demo. */
+  residualCapRate: number
+  /** Brokerage + closing as % of gross sale. */
+  saleCostPct: number
 }
 
 export type DealResults = {
@@ -77,4 +83,14 @@ export type DealResults = {
   profitPotential: number
   warnDscr: boolean
   flagCapVsHistorical: boolean
+  /** Gross sale = NOI / residual cap. */
+  grossSale: number
+  saleCosts: number
+  netSale: number
+  loanBalanceAtExit: number
+  equityReversion: number
+  /** Levered IRR (annual); NaN if undefined. */
+  leveredIrr: number
+  equityMultiple: number
+  holdCashFlows: number[]
 }

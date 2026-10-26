@@ -1,68 +1,55 @@
-# Deal Pro Forma v1 — Report
+# Deal Pro Forma v1.1 — Report (hold-period IRR)
 
-**Status:** Built + tested + screenshots. **NOT published.** Stopped for Chairman Publish widget.
+**Status:** IRR added + tested + screenshots. **NOT published.** Awaiting Chairman Publish widget.
 
 **Path:** `/workspace/deal-proforma`  
-**App name:** Deal Pro Forma  
-**Credit (More/About):** Methodology inspired by public Tactica RES tutorials (Ike Hoffman).
+**Later (do not start yet):** Earnings Flow–styled second app — reference at `/workspace/earnings-flow`
 
-## How to use
+## Hold-period IRR (simple BOE)
 
-1. Open the Deal tab (default loads the video sample: 111 First Street, St Paul, MN).
-2. Edit Property → Capital stack (LTV/LTC toggle) → Capex lines → Revenue → Expenses → Tax reassess.
-3. Sticky navy dashboard shows live NOI, DSCR, CoC, Cap.
-4. Results card: BTCF, YoC, debt yield, implied exit @ market cap, profit potential.
-5. Sensitivity: slide price (±20%) or vacancy (0–15%); optionally Apply to deal.
-6. Save deal locally; open/delete from Saved tab. Reset (↺) restores sample.
-7. Add to iPhone Home Screen for standalone PWA (offline via service worker).
+| Input | Default |
+|-------|---------|
+| Hold years | 5 |
+| Residual cap rate | 5.25% (= market cap) |
+| Sale cost % | 3% |
 
-## Formulas (exact)
+**Assumptions documented in UI:** annual BTCF held constant at Year-1 BTCF (no rent growth / expense inflation).
 
-| Metric | Formula |
-|--------|---------|
-| Loan | LTV: `pct × P` · LTC: `pct × (P + CapexTotal)` |
-| Loan cost | `loan_cost_pct × loan_amount` |
-| Total equity | `P − loan + loan_cost + CapexTotal` |
-| Total cost basis | `P + Capex + loan_cost` |
-| ADS | `PMT(r/12, years×12, loan) × 12` |
-| Vacancy | `−(rent+premium+parking) × vacancy% × units × 12` |
-| EGI | `annualize(rent+premium+parking) + other_income_annual + vacancy` |
-| Tax rate | `taxes_payable / current_assessment` |
-| Future tax | `P × reassess% × tax_rate` |
-| NOI | `EGI − (line opex + mgmt%×EGI + future tax + reserves)` |
-| DSCR | `NOI / ADS` · BTCF = `NOI − ADS` |
-| Cap / CoC / YoC | `NOI/P` · `BTCF/equity` · `NOI/cost_basis` |
-| Exit / profit | `NOI / market_cap` · `exit − P` |
+| Step | Formula |
+|------|---------|
+| Gross sale | `NOI / residual_cap_rate` |
+| Net sale | `gross_sale × (1 − sale_cost_pct)` |
+| Loan payoff | remaining amortizing balance after `hold_years × 12` months |
+| Equity reversion | `net_sale − loan_balance` |
+| Cash flows | `[-equity, BTCF, …, BTCF + reversion]` |
+| Levered IRR | Newton + bisection root of NPV = 0 |
+| Equity multiple | `(BTCF × hold + reversion) / total_equity` |
 
-**Alerts:** DSCR &lt; 1.20 warn; pro forma cap &lt; historical cap flag.
+## Demo deal sample (111 First Street)
 
-## Demo deal computed (video defaults)
-
-With listed defaults (most per-unit opex lines = 0 as specified):
-
-- Capex total: **$310,000**
-- Loan (65% LTV): **$16,250,000** · Loan cost: **$162,500** · Equity: **$9,222,500**
-- EGI: **$2,879,020** · Future tax: **~$493,274**
-- **NOI: ~$2,175,585** · ADS: **~$1,226,757** · DSCR: **~1.77x** · BTCF: **~$948,827**
-- Cap: **~8.70%** · CoC: **~10.29%** · YoC: **~8.54%**
-- Implied exit @ 5.25%: **~$41.44M** · Profit potential: **~$16.44M**
-
-Note: Analyst “sanity ~1.7M NOI / ~6.8% cap” assumes fuller opex fill than the listed defaults (payroll/utilities/insurance/R&M/marketing/other = 0). Formulas and inputs match the authoritative brief exactly; fill expense lines to target a lower NOI.
+- BTCF (Y1, constant): **~$948,827**
+- Gross sale: **~$41,439,709** · Sale costs: **~$1,243,191** · Net sale: **~$40,196,517**
+- Loan balance @ yr 5: **~$14,560,916**
+- Equity reversion: **~$25,635,601**
+- **Levered IRR: ~29.98%**
+- **Equity multiple: ~3.29x**
+- CFs: `[-9,222,500, 948,827 ×4, 26,584,429]`
 
 ## Screenshots (WebKit 440×956 @3)
 
-- `/workspace/deal-proforma/screens/01-deal-top.png` — Property + capital + sticky dash
-- `/workspace/deal-proforma/screens/02-results.png` — Results metrics
-- `/workspace/deal-proforma/screens/03-sensitivity.png` — Sensitivity
-- `/workspace/deal-proforma/screens/04-capital-ltc.png` — LTC toggle
-- `/workspace/deal-proforma/screens/05-saved-empty.png` — Saved empty
-- `/workspace/deal-proforma/screens/06-saved-list.png` — Saved list
-- `/workspace/deal-proforma/screens/07-about.png` — About / credit
+- `/workspace/deal-proforma/screens/01-deal-top.png` — dash shows IRR
+- `/workspace/deal-proforma/screens/02-results.png`
+- `/workspace/deal-proforma/screens/03-hold-irr.png` — hold inputs + IRR / EM
+- `/workspace/deal-proforma/screens/04-sensitivity.png`
+- `/workspace/deal-proforma/screens/05-capital-ltc.png`
+- `/workspace/deal-proforma/screens/06-saved-empty.png`
+- `/workspace/deal-proforma/screens/07-saved-list.png`
+- `/workspace/deal-proforma/screens/08-about.png`
 
 ## Tests
 
-`npm test` — 10/10 passed (PMT, LTV/LTC, EGI/vacancy, tax reassess, returns, alerts).
+`npm test` — **16/16** passed (incl. remaining balance iterative match, classic IRR, demo hold IRR/EM).
 
-## Local commit
+## Git
 
-See git log in repo. **No push** — awaiting Chairman screenshots + Publish widget.
+Local commits only — **no push / no publish.**
