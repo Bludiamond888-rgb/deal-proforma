@@ -189,3 +189,29 @@ label.field span.full { grid-column: 1 / -1; }
   .content { max-width: 720px; margin: 0 auto; }
   .dash, .top, .tabs { left: 50%; transform: translateX(-50%); max-width: 720px; width: 100%; }
 }
+
+.section-title {
+  margin: 0 0 8px; font-size: 22px; font-weight: 800; letter-spacing: -.3px; color: var(--navy);
+}
+.fine { margin: 0 0 12px; color: var(--mute); font-size: 13.5px; line-height: 1.45; }
+
+.glossary { display: grid; gap: 10px; }
+.glossary-group { margin: 0; }
+.glossary-group h3 {
+  margin: 14px 0 8px; font-size: 12px; font-weight: 800;
+  text-transform: uppercase; letter-spacing: .06em; color: var(--mute);
+}
+.glossary-group:first-child h3 { margin-top: 4px; }
+.g-item {
+  background: #fff; border: 1px solid var(--line); border-radius: 14px;
+  padding: 12px 14px; margin: 0 0 8px;
+}
+.g-item b { display: block; font-size: 15px; letter-spacing: -.01em; margin-bottom: 4px; }
+.g-item p { margin: 0; font-size: 13.5px; line-height: 1.45; color: #334155; }
+.g-item .tip {
+  margin: 8px 0 0; padding: 8px 10px; border-radius: 10px;
+  background: #eef2ff; color: #3730a3; font-size: 12.5px; line-height: 1.4;
+}
+
+.tabs button { font-size: 11px; gap: 2px; }
+.tabs .ic { font-size: 17px; }

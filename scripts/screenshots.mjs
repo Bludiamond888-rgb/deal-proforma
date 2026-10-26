@@ -47,7 +47,7 @@ await page.click('.seg >> text=LTC')
 await shot('05-capital-ltc')
 await page.click('.seg >> text=LTV')
 
-// Saved tab
+// Saved tab (2nd)
 await page.click('.tabs button:nth-child(2)')
 await page.waitForTimeout(300)
 await shot('06-saved-empty')
@@ -60,10 +60,19 @@ await page.click('.tabs button:nth-child(2)')
 await page.waitForSelector('.saved li')
 await shot('07-saved-list')
 
-// More / About
+// Terms / glossary (3rd) — wait for save toast to clear
+await page.waitForTimeout(2000)
 await page.click('.tabs button:nth-child(3)')
-await page.waitForSelector('.about')
-await shot('08-about')
+await page.waitForSelector('[data-testid="glossary"]')
+await page.waitForTimeout(200)
+await shot('08-terms-top')
+await page.evaluate(() => window.scrollBy(0, 520))
+await shot('09-terms-metrics')
+
+// About (4th)
+await page.click('.tabs button:nth-child(4)')
+await page.waitForSelector('[data-testid="about"]')
+await shot('10-about')
 
 const sw = await page.evaluate(() => navigator.serviceWorker?.getRegistration().then((r) => !!r))
 console.log('sw registered:', sw, 'errors:', errs.length ? errs : 'none')

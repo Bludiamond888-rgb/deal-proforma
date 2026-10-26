@@ -11,8 +11,9 @@ import {
   type SavedDeal,
 } from './storage'
 import type { CapexItem, DealInputs, FinancingBasis } from './types'
+import { GLOSSARY, GLOSSARY_GROUPS } from './glossary'
 
-type Tab = 'deal' | 'saved' | 'more'
+type Tab = 'deal' | 'saved' | 'glossary' | 'about'
 
 function Field({
   label,
@@ -544,8 +545,32 @@ export default function App() {
           </section>
         )}
 
-        {tab === 'more' && (
-          <section className="card about">
+        {tab === 'glossary' && (
+          <section className="about" data-testid="glossary">
+            <h2 className="section-title">Terms</h2>
+            <p className="fine">
+              Plain-English definitions for every key input, return metric, and income / cash-flow line in
+              this back-of-envelope (BOE).
+            </p>
+            <div className="glossary">
+              {GLOSSARY_GROUPS.map((g) => (
+                <section key={g.id} className="glossary-group">
+                  <h3>{g.title}</h3>
+                  {GLOSSARY.filter((e) => e.group === g.id).map((e) => (
+                    <article key={e.id} className="g-item">
+                      <b>{e.term}</b>
+                      <p>{e.text}</p>
+                      {e.tip ? <p className="tip">{e.tip}</p> : null}
+                    </article>
+                  ))}
+                </section>
+              ))}
+            </div>
+          </section>
+        )}
+
+        {tab === 'about' && (
+          <section className="card about" data-testid="about">
             <h2>About</h2>
             <p>
               <strong>Deal Pro Forma</strong> is a one-page multifamily back-of-the-envelope underwriting
@@ -567,6 +592,9 @@ export default function App() {
               Hold IRR: constant Year-1 BTCF each year; gross sale = NOI / residual cap; equity reversion = net sale − loan balance;
               levered IRR on [−equity, …BTCF…, BTCF+reversion]; equity multiple = (Σ BTCF + reversion) / equity.
             </p>
+            <p>
+              Open the <strong>Terms</strong> tab for plain-English definitions of every key input and metric.
+            </p>
             <button
               type="button"
               className="btn"
@@ -582,15 +610,18 @@ export default function App() {
         )}
       </main>
 
-      <nav className="tabs">
+      <nav className="tabs" data-testid="tabs">
         <button type="button" className={tab === 'deal' ? 'on' : ''} onClick={() => go('deal')}>
-          <span className="ic">☰</span>Deal
+          <span className="ic">▦</span>Deal
         </button>
         <button type="button" className={tab === 'saved' ? 'on' : ''} onClick={() => go('saved')}>
           <span className="ic">▤</span>Saved
         </button>
-        <button type="button" className={tab === 'more' ? 'on' : ''} onClick={() => go('more')}>
-          <span className="ic">⋯</span>More
+        <button type="button" className={tab === 'glossary' ? 'on' : ''} onClick={() => go('glossary')}>
+          <span className="ic">☰</span>Terms
+        </button>
+        <button type="button" className={tab === 'about' ? 'on' : ''} onClick={() => go('about')}>
+          <span className="ic">ⓘ</span>About
         </button>
       </nav>
 
